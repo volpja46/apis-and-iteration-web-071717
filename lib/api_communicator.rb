@@ -4,15 +4,39 @@ require 'pry'
 
 # web request returning an array of hashes full of character info
 def get_characters_from_api
-  all_characters = RestClient.get('http://www.swapi.co/api/people/')
-  character_hash = JSON.parse(all_characters)
+  #establish initial url from api
+  url = 'http://www.swapi.co/api/people/'
+  #get all data from first page of API
+  page_of_characters = JSON.parse(RestClient.get(url))
+  all_characters = page_of_characters
+  
+  next_call = page_of_characters["next"]
+
+  while next_call do
+    next_page = next_call
+    next_page_of_characters = JSON.parse(RestClient.get(next_page))
+    (all_characters["results"] << next_page_of_characters["results"])
+    next_call = next_page_of_characters["next"]
+  end
+
+  all_characters
+end
+
+def get_list_of_all_character_names(array_of_hashes_of_characters)
+  array_of_hashes_of_characters.map do |hash|
+    hash["name"].downcase
+  end
+end
+
+def valid_character?(character_array, character)
+  character_array.include?(character)
 end
 
 # cuts data to just results of all characters on page
 def remove_unnecessary_data(info_hash) 
-  just_character_data = info_hash["results"]
+  just_character_data = info_hash["results"].flatten
 end
-  
+
 # cuts data to give just info hash of our character to a variable
 def get_specific_character_data(removed_unnecessary_data, character)
   specific_character_data = removed_unnecessary_data.select do |hash|
@@ -94,3 +118,6 @@ end
 
 # that `get_character_movies_from_api` method is probably pretty long. Does it do more than one job?
 # can you split it up into helper methods?
+
+
+
